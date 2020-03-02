@@ -3,7 +3,9 @@ import numpy as np
 import cmath
 
 # better to distribute the freq over a log space than in a lin space :P
-freq = np.logspace(1, 9, num=500, base=10, endpoint=True)  # in C/Vm or F/m
+freq = np.logspace(1, 12, num=500, base=10, endpoint=True)  # in C/Vm or F/m
+# dielectric constatnt for vacuum
+e0 = 8.854 * 10**-12
 
 
 # calculating CM factor
@@ -40,7 +42,14 @@ def cm_factor(particle, real_inner, cond_inner, real_mem, cond_mem, real_med, co
     f_cm_polar = np.array(f_cm_polar)
     f_cm_rect = np.array(f_cm_rect)
 
-    fig, (ax1, ax3, ax5) = plt.subplots(3, 1)
+    # crossover frequency calculated using formula in A review of polystyrene bead manipulation by dielectrophoresis
+    wc = (((cond_mem - cond_med) * (cond_mem + 2 * cond_med) /
+           ((real_mem - real_med) * (real_mem + 2 * real_med)))**(1 / 2)) / (2 * np.pi)
+
+    print(wc)
+
+    fig, (ax1, ax3, ax5) = plt.subplots(3, 1, figsize=[6, 8])
+    # [*range] makes it a list
     ax1.plot(np.log10([*freq]), np.array(f_cm_polar[:, 0]), 'b')
     ax1.axhline(y=0, linewidth=1, color='b', linestyle='--')
     ax2 = ax1.twinx()
@@ -51,17 +60,19 @@ def cm_factor(particle, real_inner, cond_inner, real_mem, cond_mem, real_med, co
 
     ax3.plot(np.log10([*freq]), np.real(f_cm_rect), 'b')
     ax3.axhline(y=0, linewidth=1, color='b', linestyle='--')
+    # ax3.vlines(x=np.imag(wc), ymin=-0.4, ymax=0.4,
+    #            linewidth=1, color='b', linestyle='--')
     ax4 = ax3.twinx()
     ax4.plot(np.log10([*freq]), np.imag(f_cm_rect), 'r')
     ax3.set_title('Bode plot')
     ax3.set_ylabel('Real', color='b')
-    ax4.set_ylabel('imaginary', color='r')
+    ax4.set_ylabel('Imaginary', color='r')
     ax3.set_xlabel('Frequency (log (Hz))')
 
-    ax5.plot(np.real(f_cm_rect), np.imag(f_cm_rect))
+    ax5.plot(np.real(f_cm_rect), np.imag(f_cm_rect), 'b')
     ax5.set_title('Nyquist plot')
     ax5.set_ylabel('Real')
-    ax5.set_xlabel('imaginary')
+    ax5.set_xlabel('Imaginary')
 
     # fig, ax1 = plt.subplots()
     # ax1.plot(np.log10([*freq]), np.array(f_cm_polar[:, 0]), 'b')
@@ -80,13 +91,11 @@ def cm_factor(particle, real_inner, cond_inner, real_mem, cond_mem, real_med, co
 # https://pubs.rsc.org/en/content/articlelanding/2019/ra/c8ra09017c#!divAbstract
 # the 10 μm PS beads (εp = 2.6 and σp = 0.001 mS m−1) were suspended in DI water (εm = 79 and σm = 0.2 mS m−1)
 
-# dielectric constatnt for vacuum
-e0 = 8.854 * 10**-12
 
 CM_PS = cm_factor(
     particle='PS beads',
-    real_inner=2.5 * e0, cond_inner=1 * 10**-6,
-    real_mem=2.5 * e0, cond_mem=1 * 10**-6,
+    real_inner=2.5 * e0, cond_inner=1 * 10**-3,
+    real_mem=2.5 * e0, cond_mem=1 * 10**-3,
     real_med=79 * e0, cond_med=0.2 * 10**-3,
     r=5 * 10**-6, d=0,
     freq=freq)
@@ -97,24 +106,20 @@ CM_PS = cm_factor(
 # # calculation for PS beads
 # # Mortadi, A., E. El Melouky, R. Chahid, O. El Moznine, and Cherkaoui. "Studies of the Clausius–Mossotti Factor." Journal of Physical Studies 20.4 (2016): 4001-1-001-4. Web.
 
-# # dielectric constatnt for vacuum
-# e0 = 8.854 * 10**-12
 
 # CM_PS = cm_factor(
 #     particle='PS beads',
 #     real_inner=2.5 * e0, cond_inner=1 * 10**-2,
 #     real_mem=2.5 * e0, cond_mem=1 * 10**-2,
-#     real_med=79 * e0, cond_med=10**-3,
+#     real_med=78 * e0, cond_med=10**-3,
 #     r=5 * 10**-6, d=0,
 #     freq=freq)
 
 
-###################################################################################################################################
+# ###################################################################################################################################
 # # calculation for cell
 # # Lo, Y., U. Lei, K. Chen, C. Lin, M. Huang, P. Wu, and Yang. "Derivation of the Cell Dielectric Properties Based on Clausius-Mossotti Factor." Applied Physics Letters 104.11 (2014): Applied Physics Letters, 17 March 2014, Vol.104(11). Web.
 
-# # dielectric constant for vacuum:e0
-# e0 = 8.854 * 10**-12
 
 # CM_exo = cm_factor(
 #     particle='cell',
@@ -124,13 +129,11 @@ CM_PS = cm_factor(
 #     r=25 * 10**-6, d=5.5 * 10**-9,
 #     freq=freq)
 
-###################################################################################################################################
+# ###################################################################################################################################
 
 # #cm_factor (real_inner, cond_inner, real_mem, cond_mem, real_med, cond_med,r,d)
 # # calculation for exosome
 
-# # dielectric constant for vacuum:e0
-# e0 = 8.854 * 10**-12
 
 # CM_exo = cm_factor(
 #     particle='exosome',
