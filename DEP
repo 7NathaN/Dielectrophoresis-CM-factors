@@ -77,6 +77,20 @@ CM_lip = cm_factor(
     r=25 * 10**-9, d=1 * 10**-9,
     freq=freq)
 
+# calculating the difference of CM factors of exosome and liposome
+diff = np.array(CM_exo) - np.array(CM_lip)
+plt.figure()
+plt.xlabel('frequency of applied E-field')
+plt.ylabel('differences in Re(CM factor) ')
+plt.plot(np.log10([*freq]), diff)
+
+fig, ax1 = plt.subplots(1, 1)
+ax1.plot([*freq], diff, 'b')
+ax1.set_title("particle1-particle2")
+ax1.set_ylabel('diff[Re(CM)]', color='b')
+ax1.set_xlabel('Frequency (Hz)')
+ax1.grid()
+ax1.set_xscale("log")
 
 plt.tight_layout()
 plt.show()
