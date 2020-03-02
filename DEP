@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cmath
 
-# better to distribute the freq over a log space than in a lin space :P
 freq = np.logspace(1, 12, num=500, base=10, endpoint=True)  # in C/Vm or F/m
 # dielectric constatnt for vacuum
 e0 = 8.854 * 10**-12
@@ -10,8 +9,7 @@ e0 = 8.854 * 10**-12
 
 # calculating CM factor
 def cm_factor(particle, real_inner, cond_inner, real_mem, cond_mem, real_med, cond_med, r, d, freq):
-    f_cm_polar = []
-    f_cm_rect = []
+    f_cm = []
 
     gamma = r / (r - d)
 
@@ -32,133 +30,53 @@ def cm_factor(particle, real_inner, cond_inner, real_mem, cond_mem, real_med, co
         # Clausius-Mossotti factor
         cm_factor = (comp_particle - comp_media) / \
             (comp_particle + 2 * comp_media)
-
-        # cmath.polar converts the complex number into a polar number
-        # gets two values, the modulus and argument(phase)
-        f_cm_polar.append(cmath.polar(cm_factor))
-        f_cm_rect.append(cm_factor)
+        f_cm.append(cm_factor)
 
     # convert the list of tuples[(a1, b1), (a2, b2), ..] into an array that can be plot
-    f_cm_polar = np.array(f_cm_polar)
-    f_cm_rect = np.array(f_cm_rect)
+    f_cm = np.array(f_cm)
 
     # crossover frequency calculated using formula in A review of polystyrene bead manipulation by dielectrophoresis
     wc = (((cond_mem - cond_med) * (cond_mem + 2 * cond_med) /
            ((real_mem - real_med) * (real_mem + 2 * real_med)))**(1 / 2)) / (2 * np.pi)
 
-    print(wc)
-
-    fig, (ax1, ax3, ax5) = plt.subplots(3, 1, figsize=[6, 8])
-    # [*range] makes it a list
-    ax1.plot(np.log10([*freq]), np.array(f_cm_polar[:, 0]), 'b')
+    # plot
+    fig, ax1 = plt.subplots(1, 1)
+    ax1.plot([*freq], np.real(f_cm), 'b')
     ax1.axhline(y=0, linewidth=1, color='b', linestyle='--')
+    ax1.vlines(x=wc, ymin=min(np.real(f_cm)), ymax=max(np.real(f_cm)),
+               linewidth=1, color='b', linestyle='--')
+    ax1.text(wc, min(np.real(f_cm)), "{:.2f}".format(np.log10(wc)))
     ax2 = ax1.twinx()
-    ax2.plot(np.log10([*freq]), np.array(f_cm_polar[:, 1]) * 180 / np.pi, 'r')
-    ax1.set_ylabel('Re(CM factor) of ' + particle, color='b')
-    ax2.set_ylabel('Phase (°)', color='r')
-    ax1.set_xlabel('Frequency (log (Hz))')
+    ax2.plot([*freq], np.imag(f_cm), 'r')
+    ax1.set_title(particle)
+    ax1.set_ylabel('Re(CM)', color='b')
+    ax2.set_ylabel('Im(CM)', color='r')
+    ax1.set_xlabel('Frequency (Hz)')
+    ax1.grid()
+    ax1.set_xscale("log")
 
-    ax3.plot(np.log10([*freq]), np.real(f_cm_rect), 'b')
-    ax3.axhline(y=0, linewidth=1, color='b', linestyle='--')
-    # ax3.vlines(x=np.imag(wc), ymin=-0.4, ymax=0.4,
-    #            linewidth=1, color='b', linestyle='--')
-    ax4 = ax3.twinx()
-    ax4.plot(np.log10([*freq]), np.imag(f_cm_rect), 'r')
-    ax3.set_title('Bode plot')
-    ax3.set_ylabel('Real', color='b')
-    ax4.set_ylabel('Imaginary', color='r')
-    ax3.set_xlabel('Frequency (log (Hz))')
-
-    ax5.plot(np.real(f_cm_rect), np.imag(f_cm_rect), 'b')
-    ax5.set_title('Nyquist plot')
-    ax5.set_ylabel('Real')
-    ax5.set_xlabel('Imaginary')
-
-    # fig, ax1 = plt.subplots()
-    # ax1.plot(np.log10([*freq]), np.array(f_cm_polar[:, 0]), 'b')
-    # ax2 = ax1.twinx()
-    # ax2.plot(np.log10([*freq]), np.array(f_cm_polar[:, 1]), 'r')
-    # ax1.set_ylabel('Re(CM factor) of ' + particle, color='b')
-    # ax2.set_ylabel('Phase (°)', color='r')
-    # ax1.set_xlabel('Frequency (log (Hz))')
-
-    return np.array(f_cm_polar[:, 0])
+    return np.array(f_cm)
 
 
-###################################################################################################################################
-# calculation for PS beads #1
-# A review of polystyrene bead manipulation by dielectrophoresis
-# https://pubs.rsc.org/en/content/articlelanding/2019/ra/c8ra09017c#!divAbstract
-# the 10 μm PS beads (εp = 2.6 and σp = 0.001 mS m−1) were suspended in DI water (εm = 79 and σm = 0.2 mS m−1)
-
-
-CM_PS = cm_factor(
-    particle='PS beads',
-    real_inner=2.5 * e0, cond_inner=1 * 10**-3,
-    real_mem=2.5 * e0, cond_mem=1 * 10**-3,
-    real_med=79 * e0, cond_med=0.2 * 10**-3,
-    r=5 * 10**-6, d=0,
+# cm_factor (real_inner, cond_inner, real_mem, cond_mem, real_med, cond_med,r,d)
+# calculation for exosome
+CM_exo = cm_factor(
+    particle='exosome',
+    real_inner=130 * e0, cond_inner=0.056,
+    real_mem=6.05 * e0, cond_mem=3.29 * 10**-6,
+    real_med=100 * e0, cond_med=2.5,
+    r=25 * 10**-6, d=5.5 * 10**-9,
     freq=freq)
 
+# calculation for lipoprotein
+CM_lip = cm_factor(
+    particle='liposome',
+    real_inner=2.5 * e0, cond_inner=0.03,
+    real_mem=5 * e0, cond_mem=10**-7,
+    real_med=1000 * e0, cond_med=2.5,
+    r=25 * 10**-9, d=1 * 10**-9,
+    freq=freq)
 
-###################################################################################################################################
-
-# # calculation for PS beads
-# # Mortadi, A., E. El Melouky, R. Chahid, O. El Moznine, and Cherkaoui. "Studies of the Clausius–Mossotti Factor." Journal of Physical Studies 20.4 (2016): 4001-1-001-4. Web.
-
-
-# CM_PS = cm_factor(
-#     particle='PS beads',
-#     real_inner=2.5 * e0, cond_inner=1 * 10**-2,
-#     real_mem=2.5 * e0, cond_mem=1 * 10**-2,
-#     real_med=78 * e0, cond_med=10**-3,
-#     r=5 * 10**-6, d=0,
-#     freq=freq)
-
-
-# ###################################################################################################################################
-# # calculation for cell
-# # Lo, Y., U. Lei, K. Chen, C. Lin, M. Huang, P. Wu, and Yang. "Derivation of the Cell Dielectric Properties Based on Clausius-Mossotti Factor." Applied Physics Letters 104.11 (2014): Applied Physics Letters, 17 March 2014, Vol.104(11). Web.
-
-
-# CM_exo = cm_factor(
-#     particle='cell',
-#     real_inner=130 * e0, cond_inner=0.056,
-#     real_mem=6.05 * e0, cond_mem=3.29 * 10**-6,
-#     real_med=80 * e0, cond_med=0.011,
-#     r=25 * 10**-6, d=5.5 * 10**-9,
-#     freq=freq)
-
-# ###################################################################################################################################
-
-# #cm_factor (real_inner, cond_inner, real_mem, cond_mem, real_med, cond_med,r,d)
-# # calculation for exosome
-
-
-# CM_exo = cm_factor(
-#     particle='exosome',
-#     real_inner=130 * e0, cond_inner=0.056,
-#     real_mem=6.05 * e0, cond_mem=3.29 * 10**-6,
-#     real_med=100 * e0, cond_med=2.5,
-#     r=25 * 10**-6, d=5.5 * 10**-9,
-#     freq=freq)
-# # calculation for lipoprotein
-# CM_lip = cm_factor(
-#     particle='liposome',
-#     real_inner=2.5 * e0, cond_inner=0.03,
-#     real_mem=5 * e0, cond_mem=10**-7,
-#     real_med=1000 * e0, cond_med=2.5,
-#     r=25 * 10**-9, d=1 * 10**-9,
-#     freq=freq)
-
-# # calculating the difference of CM factors of exosome and liposome
-# diff = np.array(CM_exo) - np.array(CM_lip)
-# plt.figure()
-# plt.xlabel('frequency of applied E-field')
-# plt.ylabel('differences in Re(CM factor) ')
-# plt.plot(np.log10([*freq]), diff)
-
-###################################################################################################################################
 
 plt.tight_layout()
 plt.show()
